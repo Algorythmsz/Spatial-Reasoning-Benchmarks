@@ -1,0 +1,23 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+.venv/
+venv/
+
+.vscode/
+.idea/
+.ipynb_checkpoints/
+
+# Local cache (GB-scale, never commit)
+.cache/
+spatialscore_images/
+
+# OS
+.DS_Store
+Thumbs.db

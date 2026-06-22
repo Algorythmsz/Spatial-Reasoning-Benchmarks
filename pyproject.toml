@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spatial-benchmarks"
+version = "0.2.0"
+description = "Minimal loaders for SpatialScore, MultihopSpatial, RefSpatial-Bench, RefSpatial-Expand-Bench"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "Seungwon Park" },
+]
+keywords = ["spatial-reasoning", "benchmark", "multimodal", "vlm", "post-crisp"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "huggingface_hub>=0.23.0",
+    "datasets>=2.18.0",
+    "Pillow>=10.0.0",
+    "pyarrow>=14.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "ruff>=0.4",
+]
+
+[tool.setuptools.packages.find]
+include = ["spatial_benchmarks*"]
+exclude = ["tests*"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP"]
