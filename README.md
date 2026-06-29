@@ -1,20 +1,28 @@
-# spatial-benchmarks
+# Spatial-benchmarks
 
-Thin loading helpers for the four spatial reasoning benchmarks used in POST CRISP evaluation.
+Thin loading helpers for the four spatial reasoning benchmarks and the SpatialCorpus training corpus used in POST CRISP evaluation.
 
-The four benchmarks have genuinely different schemas (point-in-mask / bbox IoU / MRA / MCQ), so each is exposed in its native form. 
+The four benchmarks have genuinely different schemas (point-in-mask / bbox IoU / MRA / MCQ), so each is exposed in its native form.
 
-| Benchmark | HF repo | Samples | Output type | Scoring |
-|---|---|---|---|---|
-| [SpatialScore](#spatialscore) | `haoningwu/SpatialScore` | 5,025 | mixed (MCQ / judge / distance / open) | per-qtype average |
-| [MultihopSpatial](#multihopspatial) | `etri-vilab/MultihopSpatial` | 4,500 + 6,791 | MCQ + bbox | Acc@50IoU |
-| [RefSpatial-Bench](#refspatial-bench) | `BAAI/RefSpatial-Bench` | 277 (loc / place / **unseen**) | point | point-in-mask |
-| [RefSpatial-Expand-Bench](#refspatial-expand-bench) | `JingkunAn/RefSpatial-Expand-Bench` | 441 (loc / place configs) | point | point-in-mask |
+### Evaluation benchmarks
+
+| Benchmark | HF repo | Samples | Output type | Scoring | Viewer |
+|---|---|---|---|---|---|
+| [SpatialScore](#spatialscore) | `haoningwu/SpatialScore` | 5,025 | mixed (MCQ / judge / distance / open) | per-qtype average | [SpatialScore_Viewer](https://algorythmsz.github.io/SpatialScore_Viewer/) |
+| [MultihopSpatial](#multihopspatial) | `etri-vilab/MultihopSpatial` | 4,500 + 6,791 | MCQ + bbox | Acc@50IoU | [MultihopSpatial_Viewer](https://algorythmsz.github.io/MultihopSpatial_Viewer/) |
+| [RefSpatial-Expand-Bench](#refspatial-expand-bench) | `JingkunAn/RefSpatial-Expand-Bench` | 441 (loc / place configs) | point | point-in-mask | [RefSpatial-Expand-bench_Viewer](https://algorythmsz.github.io/RefSpatial-Expand-bench_Viewer/) |
+| [RefSpatial-Bench](#refspatial-bench) *(subset of Expand)* | `BAAI/RefSpatial-Bench` | 277 (loc / place / **unseen**) | point | point-in-mask | — |
+
+### Training corpus
+
+| Corpus | HF repo | Samples | Format | Size | Viewer |
+|---|---|---|---|---|---|
+| [SpatialCorpus](#spatialcorpus) | `haoningwu/SpatialCorpus` | ~331K | multimodal QA (SFT) | ~73.6 GB | [SpatialCorpus_Viewer](https://algorythmsz.github.io/SpatialCorpus_Viewer/) |
 
 ## Install
 
 ```bash
-git clone <this-repo>
+git clone https://github.com/Algorythmsz/Spatial-Reasoning-Benchmarks
 cd spatial-benchmarks
 pip install -e .
 ```
@@ -25,7 +33,9 @@ Requires Python ≥ 3.10. `huggingface_hub`, `datasets`, `pyarrow`, and `Pillow`
 
 ## SpatialScore
 
-**Repo**: [`haoningwu/SpatialScore`](https://huggingface.co/datasets/haoningwu/SpatialScore) — CVPR 2026 Highlight. arXiv:2505.17012.
+**Repo**: [`haoningwu/SpatialScore`](https://huggingface.co/datasets/haoningwu/SpatialScore) — CVPR 2026 Highlight. arXiv:2505.17012. 
+
+**Viewer**: [SpatialScore_Viewer](https://algorythmsz.github.io/SpatialScore_Viewer/)
 
 5,025 manually-verified samples, organized into **30 sub_tasks** across 10 categories. Samples are aggregated from many source datasets (recorded in the `dataset` field — important for leakage analysis). The image archive is ~15.8 GB.
 
@@ -155,7 +165,9 @@ The official eval (`test_qwen.py` in `haoningwu3639/SpatialScore`) uses four sco
 
 ## MultihopSpatial
 
-**Repo**: [`etri-vilab/MultihopSpatial`](https://huggingface.co/datasets/etri-vilab/MultihopSpatial) — ETRI / KAIST 2026. arXiv:2603.18892.
+**Repo**: [`etri-vilab/MultihopSpatial`](https://huggingface.co/datasets/etri-vilab/MultihopSpatial) — ETRI / KAIST 2026. arXiv:2603.18892. 
+
+**Viewer**: [MultihopSpatial_Viewer](https://algorythmsz.github.io/MultihopSpatial_Viewer/)
 
 4,500 eval + 6,791 train. 1 / 2 / 3-hop sequential spatial reasoning. All 4,500 eval samples are annotated by 10 trained human experts (Krippendorff α = 0.90).
 
@@ -210,79 +222,13 @@ def acc_at_iou50(samples, predictions):
 
 ---
 
-## RefSpatial-Bench
-
-**Repo**: [`BAAI/RefSpatial-Bench`](https://huggingface.co/datasets/BAAI/RefSpatial-Bench) — arXiv:2506.04308 (RoboRefer).
-
-277 samples, 3 splits. **The single strongest evidence point for POST CRISP's compositional generalization claim.**
-
-| Split | Samples | Purpose |
-|---|---|---|
-| location | 100 | inside RoboRefer's training distribution (location relations) |
-| placement | 100 | inside RoboRefer's training distribution (placement relations) |
-| **unseen** | **77** | spatial-relation combinations RoboRefer never saw — **OOD generalization** |
-
-### Load
-
-```python
-from spatial_benchmarks import load_refspatial_bench
-
-unseen_ds = load_refspatial_bench("unseen")     # 77 samples ← the POST CRISP key
-all_ds    = load_refspatial_bench("all")        # DatasetDict {location, placement, unseen}
-
-print(unseen_ds[0])
-```
-
-### Sample schema
-
-| Field | Type | Description |
-|---|---|---|
-| `id` | int | 0–99 (resets per split) |
-| `image` | PIL.Image | 384–640 px |
-| `mask` | PIL.Image | binary mask of the correct region (used for scoring) |
-| `object` | str | natural-language target description ("the orange box") |
-| `prompt` | str | full referring expression ("Please point out the orange box.") |
-| `suffix` | str | answer-format instruction; one constant value across all samples |
-| `step` | int | 1 / 2 / 3 — reasoning hops |
-
-### Scoring
-
-**point-in-mask**: the model receives `prompt + suffix` and outputs normalized coordinates `[(x, y)]` with `x, y ∈ [0, 1]`. The prediction counts as correct if the point lies inside the 1-region of the mask.
-
-```python
-import numpy as np
-
-def point_in_mask(pred_point, mask_pil):
-    """pred_point: (x, y) in [0, 1]. mask_pil: PIL.Image binary mask."""
-    mask = np.array(mask_pil.convert("L")) > 128
-    h, w = mask.shape
-    px, py = int(pred_point[0] * w), int(pred_point[1] * h)
-    if not (0 <= px < w and 0 <= py < h):
-        return False
-    return bool(mask[py, px])
-
-# Eval loop
-correct = sum(
-    point_in_mask(pred[i], unseen_ds[i]["mask"])
-    for i in range(len(unseen_ds))
-)
-acc = correct / len(unseen_ds)
-```
-
-### POST CRISP mapping
-
-- The **77 samples in the unseen split** are the paper's single strongest claim: OOD evaluation on relation combinations disjoint from RoboRefer's training distribution
-- POST CRISP deliberately does **not** train on RefSpatial-20M, both for fair head-to-head comparison with RoboRefer and to keep the contribution story clean ("if you train on their data, you can't separate the method effect from the data effect")
-- Per-step accuracy is a direct measure of compositional generalization: step = 1 (atomic) vs step = 2, 3 (composed). If POST CRISP degrades less than RoboRefer as `step` increases, the filter-chain structure is doing work
-- ⚠️ The dataset card warns: "If your model is not trained with RefSpatial, the Unseen set should not be used for evaluation." The authors meant unseen-relative-to-RefSpatial-training. Using it as general OOD evaluation is defensible — but the paper must explicitly state that interpretation
-
----
-
 ## RefSpatial-Expand-Bench
 
-**Repo**: [`JingkunAn/RefSpatial-Expand-Bench`](https://huggingface.co/datasets/JingkunAn/RefSpatial-Expand-Bench)
+**Repo**: [`JingkunAn/RefSpatial-Expand-Bench`](https://huggingface.co/datasets/JingkunAn/RefSpatial-Expand-Bench) 
 
-441 samples, an expansion of RefSpatial-Bench across multiple sources: 2D web + CA-1M + Sim (Infinigen + Objaverse-LVIS).
+**Viewer**: [RefSpatial-Expand-bench_Viewer](https://algorythmsz.github.io/RefSpatial-Expand-bench_Viewer/)
+
+441 samples across multiple sources: 2D web + CA-1M + Sim (Infinigen + Objaverse-LVIS). **RefSpatial-Bench is a complete subset of this dataset** — all 277 original samples (location, placement, unseen) are included here.
 
 | Config | Samples |
 |---|---|
@@ -319,12 +265,136 @@ print(all_ds[0])
 
 ### Scoring
 
-Identical to RefSpatial-Bench (point-in-mask). The snippet above applies as-is.
+**point-in-mask**: the model receives `prompt + suffix` and outputs normalized coordinates `[(x, y)]` with `x, y ∈ [0, 1]`. The prediction counts as correct if the point lies inside the 1-region of the mask.
+
+```python
+import numpy as np
+
+def point_in_mask(pred_point, mask_pil):
+    """pred_point: (x, y) in [0, 1]. mask_pil: PIL.Image binary mask."""
+    mask = np.array(mask_pil.convert("L")) > 128
+    h, w = mask.shape
+    px, py = int(pred_point[0] * w), int(pred_point[1] * h)
+    if not (0 <= px < w and 0 <= py < h):
+        return False
+    return bool(mask[py, px])
+
+# Eval loop
+correct = sum(
+    point_in_mask(pred[i], all_ds[i]["mask"])
+    for i in range(len(all_ds))
+)
+acc = correct / len(all_ds)
+```
 
 ### POST CRISP mapping
 
-- Useful as a **sim-to-real auxiliary**: slicing scores by `category` reveals the transfer gap between sim sources (Infinigen, Objaverse-LVIS) and real sources (CA-1M, 2D-web)
-- Better placed in the appendix than the main results — RefSpatial-Bench unseen carries the main-paper narrative more cleanly
+- **Primary point-in-mask benchmark**: broader coverage than RefSpatial-Bench (441 vs 277 samples, multiple real + sim sources)
+- Slicing scores by `category` reveals the sim-to-real transfer gap between Infinigen/Objaverse-LVIS and CA-1M/2D-web sources
+- Per-step accuracy measures compositional generalization: step = 1 (atomic) vs step = 2, 3 (composed)
+
+---
+
+## RefSpatial-Bench
+
+**Repo**: [`BAAI/RefSpatial-Bench`](https://huggingface.co/datasets/BAAI/RefSpatial-Bench) — arXiv:2506.04308 (RoboRefer).
+
+> **RefSpatial-Bench is a complete subset of RefSpatial-Expand-Bench.** The viewer is maintained only for Expand: [algorythmsz.github.io/RefSpatial-Expand-bench_Viewer](https://algorythmsz.github.io/RefSpatial-Expand-bench_Viewer/)
+
+277 samples, 3 splits. Contains an **unseen** split (77 samples) of spatial-relation combinations RoboRefer never saw — the strongest OOD generalization signal.
+
+| Split | Samples | Purpose |
+|---|---|---|
+| location | 100 | inside RoboRefer's training distribution (location relations) |
+| placement | 100 | inside RoboRefer's training distribution (placement relations) |
+| **unseen** | **77** | spatial-relation combinations RoboRefer never saw — **OOD generalization** |
+
+### Load
+
+```python
+from spatial_benchmarks import load_refspatial_bench
+
+unseen_ds = load_refspatial_bench("unseen")     # 77 samples ← OOD split
+all_ds    = load_refspatial_bench("all")        # DatasetDict {location, placement, unseen}
+
+print(unseen_ds[0])
+```
+
+### Sample schema
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | int | 0–99 (resets per split) |
+| `image` | PIL.Image | 384–640 px |
+| `mask` | PIL.Image | binary mask of the correct region (used for scoring) |
+| `object` | str | natural-language target description ("the orange box") |
+| `prompt` | str | full referring expression ("Please point out the orange box.") |
+| `suffix` | str | answer-format instruction; one constant value across all samples |
+| `step` | int | 1 / 2 / 3 — reasoning hops |
+
+### Scoring
+
+Identical to RefSpatial-Expand-Bench (point-in-mask). The snippet above applies as-is.
+
+### POST CRISP mapping
+
+- The **77 samples in the unseen split** are the paper's OOD evaluation: relation combinations disjoint from RoboRefer's training distribution
+- POST CRISP deliberately does **not** train on RefSpatial-20M, both for fair head-to-head comparison with RoboRefer and to keep the contribution story clean ("if you train on their data, you can't separate the method effect from the data effect")
+- Per-step accuracy is a direct measure of compositional generalization: step = 1 (atomic) vs step = 2, 3 (composed). If POST CRISP degrades less than RoboRefer as `step` increases, the filter-chain structure is doing work
+- ⚠️ The dataset card warns: "If your model is not trained with RefSpatial, the Unseen set should not be used for evaluation." The authors meant unseen-relative-to-RefSpatial-training. Using it as general OOD evaluation is defensible — but the paper must explicitly state that interpretation
+
+---
+
+## SpatialCorpus
+
+**Repo**: [`haoningwu/SpatialCorpus`](https://huggingface.co/datasets/haoningwu/SpatialCorpus) — CVPR 2026 Highlight. arXiv:2505.17012. 
+
+**Viewer**: [SpatialCorpus_Viewer](https://algorythmsz.github.io/SpatialCorpus_Viewer/)
+
+~331K multimodal QA samples for supervised fine-tuning of vision-language models on spatial reasoning tasks. Covers the same 10 categories and 30 sub_tasks as SpatialScore. The image archive is ~73.6 GB.
+
+⚠️ **This is training data, not an evaluation benchmark.** For POST CRISP, its primary uses are leakage analysis (checking if benchmark samples appear in the corpus) and training-set ablations (sub_task coverage).
+
+### Load
+
+```python
+from spatial_benchmarks import load_spatialcorpus
+
+# Annotations only (zip downloaded, images not extracted — faster startup)
+records = load_spatialcorpus(extract_images=False)
+print(len(records))   # ~331,000
+print(records[0].keys())
+
+# Full load with images (~73.6 GB extraction)
+records = load_spatialcorpus()
+```
+
+The annotation is bundled inside `SpatialCorpus.zip`. On first call the full archive is downloaded regardless of `extract_images` — the zip is the only file in the repo. Subsequent calls use the cache.
+
+### Record schema
+
+SpatialCorpus records share the core fields with SpatialScore. Exact field names are confirmed at extraction time — use `records[0].keys()` to inspect after loading. Expected fields:
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | int / str | sample id |
+| `question` | str | question text |
+| `answer` | str | gold answer |
+| `question_type` | str | `multi-choice` / `judgement` / `open-ended-distance` / `open-ended-general` |
+| `options` | list\[str\] / None | choices when qtype is `multi-choice` |
+| `sub_task` | str | one of 30 sub_tasks |
+| `category` | str | one of 10 categories |
+| `dataset` | str | source dataset (important for leakage analysis) |
+| `image` | str / list\[str\] | relative path inside the zip |
+| `abs_image` | Path / list\[Path\] | absolute path after extraction (injected by loader) |
+
+SFT-specific fields (e.g. `conversations`, `system_prompt`) may also be present depending on the version of the corpus.
+
+### POST CRISP mapping
+
+- **Leakage analysis**: compare `record["dataset"]` values in the corpus against the same field in SpatialScore to quantify overlap. The `id` field is a secondary check for exact-sample overlap.
+- **Training coverage**: count corpus samples per `sub_task` and compare to benchmark coverage. Sub_tasks that are underrepresented in the corpus but prominent in the benchmark are natural ablation axes.
+- **POST CRISP does not fine-tune on SpatialCorpus** — the contribution story is about the filter-chain and data curation method, not data scale. SpatialCorpus is useful here only as a reference for what the original SpatialScore authors consider "good training data."
 
 ---
 

@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "spatial-benchmarks"
-version = "0.2.0"
-description = "Minimal loaders for SpatialScore, MultihopSpatial, RefSpatial-Bench, RefSpatial-Expand-Bench"
+version = "0.3.0"
+description = "Minimal loaders for SpatialScore, MultihopSpatial, RefSpatial-Bench, RefSpatial-Expand-Bench, and SpatialCorpus"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
